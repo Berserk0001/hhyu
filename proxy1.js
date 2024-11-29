@@ -14,6 +14,7 @@ import pick from "./pick.js";
 const DEFAULT_QUALITY = 40;
 const MIN_COMPRESS_LENGTH = 1024;
 const MIN_TRANSPARENT_COMPRESS_LENGTH = MIN_COMPRESS_LENGTH * 100;
+const BUFFER_SIZE = 1024 * 1024; // 1MB buffer size
 
 // Helper: Should compress
 function shouldCompress(req) {
@@ -73,7 +74,7 @@ function compress(req, res, input) {
     limitInputPixels: false,
   });
 
-  const passThroughStream = new PassThrough();
+  const passThroughStream = new PassThrough({ highWaterMark: BUFFER_SIZE });
 
   input
     .pipe(
@@ -99,6 +100,12 @@ function compress(req, res, input) {
     .pipe(passThroughStream);
 
   passThroughStream.pipe(res);
+
+  // Monitor backpressure
+  passThroughStream.on('drain', () => {
+    console.log('Buffer drained');
+    // Resume data producer if needed
+  });
 }
 
 // Main: Proxy
