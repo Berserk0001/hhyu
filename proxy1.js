@@ -8,13 +8,11 @@ import http from "http";
 import https from "https";
 import sharp from "sharp";
 import { availableParallelism } from 'os';
-import { PassThrough } from 'stream';
 import pick from "./pick.js";
 
 const DEFAULT_QUALITY = 40;
 const MIN_COMPRESS_LENGTH = 1024;
 const MIN_TRANSPARENT_COMPRESS_LENGTH = MIN_COMPRESS_LENGTH * 100;
-const BUFFER_SIZE = 1024 * 1024; // 1MB buffer size
 
 // Helper: Should compress
 function shouldCompress(req) {
@@ -74,8 +72,6 @@ function compress(req, res, input) {
     limitInputPixels: false,
   });
 
-  const passThroughStream = new PassThrough({ highWaterMark: BUFFER_SIZE });
-
   input
     .pipe(
       sharpInstance
@@ -97,15 +93,7 @@ function compress(req, res, input) {
           res.statusCode = 200;
         })
     )
-    .pipe(passThroughStream);
-
-  passThroughStream.pipe(res);
-
-  // Monitor backpressure
-  passThroughStream.on('drain', () => {
-    console.log('Buffer drained');
-    // Resume data producer if needed
-  });
+    .pipe(res);
 }
 
 // Main: Proxy
