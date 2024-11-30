@@ -14,6 +14,7 @@ import pick from "./pick.js";
 const DEFAULT_QUALITY = 40;
 const MIN_COMPRESS_LENGTH = 1024;
 const MIN_TRANSPARENT_COMPRESS_LENGTH = MIN_COMPRESS_LENGTH * 100;
+const HIGH_WATER_MARK = 1 * 1024 * 1024; // 1MB
 
 // Helper: Should compress
 function shouldCompress(req) {
@@ -73,7 +74,7 @@ function compress(req, res, input) {
     limitInputPixels: false,
   });
 
-  const passThroughStream = new PassThrough();
+  const passThroughStream = new PassThrough({ highWaterMark: HIGH_WATER_MARK });
 
   input
     .pipe(
@@ -165,7 +166,7 @@ function proxy(req, res) {
           res.setHeader(header, originRes.headers[header]);
         }
       });
-      return originRes.pipe(res);
+      return originRes.pipe(res, { highWaterMark: HIGH_WATER_MARK });
     }
   });
 
@@ -173,8 +174,8 @@ function proxy(req, res) {
     if (err.code === 'ERR_INVALID_URL') {
       return res.statusCode = 400, res.end("Invalid URL");
     }
-    redirect(req, res);
     console.error(err);
+    redirect(req, res);
   });
 
   originReq.end();
