@@ -78,17 +78,17 @@ function compress(req, res, input) {
   input
     .pipe(
       sharpInstance
-        .resize(null, 16383, {
+       /* .resize(null, 16383, {
           //fit: 'inside',
           withoutEnlargement: true
-        })
+        })*/
         .grayscale(req.params.grayscale)
         .toFormat(format, {
           quality: req.params.quality,
           progressive: true,
-          optimizeScans: true
+          optimizeScans: true,
          // chromaSubsampling: '4:2:0',
-         // effort: 0
+          effort: 0
         })
         .on("error", () => redirect(req, res))
         .on("info", (info) => {
